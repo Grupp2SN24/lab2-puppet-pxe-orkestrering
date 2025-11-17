@@ -1,3 +1,4 @@
+
 # Lab 2: PXE-boot och Puppet Orkestrering
 
 
@@ -83,3 +84,4 @@ Debian installeras automatiskt via PXE! (10-15 min)
 
 **Problem:** Installationen hittar inte spegelserver
 **Lösning:** Kontrollera att NAT fungerar och gateway är 192.0.2.10
+
