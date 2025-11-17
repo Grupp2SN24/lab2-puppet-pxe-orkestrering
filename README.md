@@ -122,6 +122,37 @@ sudo puppet apply --environment production \
 
 ### 7. Boota målmaskiner via PXE
 
+
+Lägg till i README.md:
+Under "7. Boota målmaskiner via PXE", lägg till:
+markdown7. Boota målmaskiner via PXE
+
+**I GNS3:**
+
+** Kontrollera MAC-adress:**
+
+1. Högerklicka på Målmaskin-1 → Configure → Network
+2. Kolla MAC-adressen`)
+3. **Uppdatera `puppet-code/modules/profile/manifests/pxe_install.pp`:**
+```bash
+nano puppet-code/modules/profile/manifests/pxe_install.pp
+```
+
+Hitta och ändra:
+```puppet
+# Static host entries
+host deb-auto-1 {
+  hardware ethernet 0c:2c:9f:32:00:00;  # <-- DIN MAC-ADRESS HÄR!
+  fixed-address 192.0.2.121;
+}
+
+host deb-auto-2 {
+  hardware ethernet 0c:78:68:b8:00:00;  # <-- DIN MAC-ADRESS HÄR!
+  fixed-address 192.0.2.122;
+}
+```
+4. Spara och kör `puppet apply` igen på PXE-Server
+
 **I GNS3:**
 - Boot priority: Network
 - Disk interface: IDE
@@ -133,12 +164,12 @@ Debian installeras automatiskt via PXE! (10-15 min)
 
 **När målmaskinen startar om:**
 1. Stoppa VM i GNS3
-2. Ändra Boot priority till **HDD**
+2. Ändra Boot priority från Network till **HDD**
 3. Starta igen
 
 **SSH till målmaskinen:**
 ```bash
-# Från PXE-Server eller din Ubuntu
+# Från PXE-Server eller din dator(världsdator)
 ssh debian@192.0.2.121
 # Lösenord: debian123
 
@@ -170,4 +201,42 @@ puppet apply -e 'include role::linux::base'
 
 **Problem:** Installationen hittar inte spegelserver
 **Lösning:** Kontrollera att NAT fungerar och gateway är 192.0.2.10
+## MAC-adress matchar inte
+
+**Symptom:**  
+Målmaskin får inte rätt IP från DHCP (får 192.0.2.100-150 range istället för .121/.122).
+
+**Diagnos:**
+```bash
+# På PXE-Server, övervaka DHCP
+sudo journalctl -u isc-dhcp-server -f
+
+# Kolla vilken MAC som syns i DHCPDISCOVER
+```
+
+**Lösning:**  
+Uppdatera MAC-adress i `profile::pxe_install.pp`:
+
+1. Hitta rätt MAC i GNS3: Högerklicka målmaskin → Configure → Network
+2. Redigera filen:
+```bash
+sudo nano /etc/puppetlabs/code/environments/production/modules/profile/manifests/pxe_install.pp
+```
+
+3. Ändra:
+```puppet
+host deb-auto-1 {
+  hardware ethernet 0c:2c:9f:32:00:00;  # Din faktiska MAC
+  fixed-address 192.0.2.121;
+}
+```
+
+4. Kör puppet apply igen:
+```bash
+cd /etc/puppetlabs/code/environments/production
+sudo puppet apply --environment production --modulepath=/etc/puppetlabs/code/environments/production/modules manifests/site.pp --certname pxe-server
+```
+
+5. Starta om målmaskinen
+
 
