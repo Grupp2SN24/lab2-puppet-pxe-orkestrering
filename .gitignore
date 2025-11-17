@@ -1,0 +1,13 @@
+# Puppet
+*.lock
+modules/apache/
+Puppetfile.lock
+
+# System
+.DS_Store
+*.swp
+*~
+
+# Temp
+*.tmp
+/tmp/
