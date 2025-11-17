@@ -17,6 +17,14 @@ Master (192.0.2.5)    PXE-Server (192.0.2.10)
 deb-auto-1      deb-auto-2
    192.0.2.121     192.0.2.122
 
+### Hårdvara/GNS3:
+- 4x Debian 12 (Bookworm) VMs
+  - 1x Master
+  - 1x PXE-Server
+  - 2x Tomma målmaskiner
+- L2 Ethernet Switch
+- NAT Cloud för internet
+
 
 ### 1. Klona repot
 
@@ -42,6 +50,52 @@ sudo puppet module install puppetlabs-apache --version 9.1.3
 **På Master och PXE-Server:**
 - Statisk IP på ens4 (L2-nät 192.0.2.0/24)
 - DHCP på ens5 (NAT för internet)
+**På Master:**
+```bash
+sudo nano /etc/network/interfaces
+```
+
+Lägg till:
+```
+auto ens4
+iface ens4 inet static
+    address 192.0.2.5
+    netmask 255.255.255.0
+```
+```bash
+sudo systemctl restart networking
+```
+
+**På PXE-Server:**
+```bash
+sudo nano /etc/network/interfaces
+```
+
+Lägg till:
+```
+auto ens4
+iface ens4 inet static
+    address 192.0.2.10
+    netmask 255.255.255.0
+```
+```bash
+sudo systemctl restart networking
+```
+Om du gör som jag gjorde så lägg in NAT koppla in DHCP på den via ens5 för att
+få internet för att kunna installera.
+
+**På båda maskinerna:**
+```bash
+sudo nano /etc/hosts
+```
+
+Lägg till:
+```
+192.0.2.5    master
+192.0.2.10   pxe-server
+192.0.2.121  deb-auto-1
+192.0.2.122  deb-auto-2
+```
 
 ### 5. Aktivera NAT på PXE-Server
 ```bash
@@ -72,6 +126,36 @@ sudo puppet apply --environment production \
 - Starta maskinen
 
 Debian installeras automatiskt via PXE! (10-15 min)
+
+8. Efter PXE-installation
+
+**När målmaskinen startar om:**
+1. Stoppa VM i GNS3
+2. Ändra Boot priority till **HDD**
+3. Starta igen
+
+**SSH till målmaskinen:**
+```bash
+# Från PXE-Server eller din Ubuntu
+ssh debian@192.0.2.121
+# Lösenord: debian123
+
+su -
+# Lösenord: password123
+```
+
+**Installera Puppet och tillämpa role::linux::base:**
+```bash
+cd /tmp
+wget https://apt.puppet.com/puppet8-release-bookworm.deb
+dpkg -i puppet8-release-bookworm.deb
+apt update
+apt install -y puppet-agent
+
+mkdir -p /etc/puppetlabs/code/environments/production/{manifests,modules/role/manifests/linux,modules/profile/manifests}
+
+puppet apply -e 'include role::linux::base'
+
 
 
 ## Felsökningar och buggar
