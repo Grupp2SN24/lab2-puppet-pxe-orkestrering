@@ -13,6 +13,8 @@ Automatisk Debian-installation via PXE med efterkonfiguration via Puppet.
 - Skalbar infrastruktur-orkestrering
 
 ## Nätverkstopologi
+<img src="topology.png" alt="GNS3 Topologi" width="500">
+
 Master (192.0.2.5)    PXE-Server (192.0.2.10)
 deb-auto-1      deb-auto-2
    192.0.2.121     192.0.2.122
